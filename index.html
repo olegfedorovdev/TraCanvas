@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="content-type" content="text/html; charset=UTF8">
     <style>
         canvas {
             border:1px solid #d3d3d3;
@@ -10,6 +11,7 @@
     </style>
 </head>
 <body onload="startGame()">
+<script src="words.js"></script>
 <script>
 
 
@@ -22,30 +24,35 @@
         start : function() {
             this.canvas.width = document.body.clientWidth - 100;
             this.canvas.height = 850; //document.body.clientHeight;
-            console.log(this.canvas.height)
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-            this.interval = setInterval(updateGameArea, 20);
+            setInterval(updateGameArea, 20);
         },
         clear : function() {
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
-    }
+    };
     
     var myGame = {
         frameNumber: 0,
         visibleWords: [],
         score: 0,
-        myScore: new WordComponent("0", 300, 30),
-        wordToGuess: new WordComponent("0", 10, 30),
+        complexity: 1,//1 - easiest, 10 - very hard
+        myScore: new WordComponent("0", 300, 30, 0),
+        wordToGuess: new WordComponent("0", 10, 30, 0),
         currentWord: "",
 
-        generateNewWord: function() {
-            let minX = 20, maxX = (myGameArea.canvas.width - minX - 400);
-            let minY = 40, maxY = (myGameArea.canvas.height/2 - minY);
+        generateNewVisibleWord: function() {
+            let minX = 20, maxX = (myGameArea.canvas.width - minX - 200);
+            let minY = 50, maxY = (myGameArea.canvas.height/2 - minY);
             let x = Math.floor(minX + Math.random()*maxX);
             let y = Math.floor(minY + Math.random()*maxY);
-            this.visibleWords.push(new WordComponent(this.getNextVisibleWord(), x, y))
+
+            function calculateGravity() {
+                return 0.001 * myGame.complexity + Math.random() * 0.001 * myGame.complexity;
+            }
+
+            this.visibleWords.push(new WordComponent(this.getNextVisibleWord(), x, y, calculateGravity()))
         },
         updateGame: function() {
             myGameArea.clear();
@@ -56,7 +63,7 @@
 
             //generate new word every second
             if ((this.frameNumber % 50) == 49) {
-                this.generateNewWord();
+                this.generateNewVisibleWord();
             }
 
             for (let i = 0; i < this.visibleWords.length; i += 1) {
@@ -65,40 +72,42 @@
             }
 
             this.myScore.x = myGameArea.canvas.width/3*2;
-            this.myScore.word = "SCORE: " + myGame.score;
+            this.myScore.word = "SCORE: " + this.score;
             this.myScore.draw();
 
             this.wordToGuess.word = "FIND: " + this.currentWord;
             this.wordToGuess.draw();
         },
         getNextVisibleWord: function () {
-            return "Hello"
+            let count = words.all.length;
+            let idx = Math.floor(Math.random()*count);
+            return words.all[idx].fi;
         },
         generateNewCurrentWord: function () {
-            this.currentWord = "Hello";
+            this.currentWord = words.all[0].en;
             this.visibleWords = [];
             for(let i = 0; i < 10; ++i) {
-                this.generateNewWord();
+                this.generateNewVisibleWord();
             }
-        },
+        }
 
-    }
+    };
     
-    function WordComponent(word, x, y) {
+    function WordComponent(word, x, y, gravity) {
         this.word = word;
         this.x = x;
         this.y = y;
-        this.font = "30px Consolas";
+        this.font = "30px Helvetica";
         this.color = "black";
-        this.alpha = 1
+        this.alpha = 1;
 
         this.speedX = 0;
         this.speedY = 0;
-        this.gravity = 0.01 + Math.random()*0.01;
+        this.gravity = gravity;
         this.gravitySpeed = 0.0;
-        this.height = 10;
+        this.height = 20;
         this.width = 100;
-        this.updatesCount = 0
+        this.updatesCount = 0;
 
         this.draw = function() {
             let ctx = myGameArea.context;
@@ -106,7 +115,10 @@
             ctx.color = this.color;
             ctx.globalAlpha = this.alpha;
             ctx.fillText(this.word, this.x, this.y);
-        }
+
+            let textSize = ctx.measureText(word);
+            this.width = textSize.width;
+        };
         this.update = function() {
             // appear slowly
             this.updatesCount++;
@@ -121,7 +133,7 @@
             this.x += this.speedX;
             this.y += this.speedY + this.gravitySpeed;
             this.hitBottom();
-        }
+        };
         this.hitBottom = function() {
             let bottom = myGameArea.canvas.height - this.height;
             if (this.y > bottom) {
