@@ -12,10 +12,8 @@
 <body onload="startGame()">
 <script>
 
-    var myScore;
 
     function startGame() {
-        myScore = new WordComponent("0", 10, 30);
         myGameArea.start();
     }
 
@@ -27,7 +25,6 @@
             console.log(this.canvas.height)
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-            this.frameNo = 0;
             this.interval = setInterval(updateGameArea, 20);
         },
         clear : function() {
@@ -36,24 +33,35 @@
     }
     
     var myGame = {
+        frameNumber: 0,
         visibleWords: [],
         score: 0,
+        myScore: new WordComponent("0", 10, 30),
         generateNewWordIfNeeded: function() {
             //generate new word every second
-            if ((myGameArea.frameNo % 50) == 1) {
+            if ((this.frameNumber % 50) == 1) {
                 let minX = 20, maxX = (myGameArea.canvas.width - minX - 400);
                 let minY = 20, maxY = (myGameArea.canvas.height/2 - minY);
                 let x = Math.floor(minX + Math.random()*maxX);
                 let y = Math.floor(minY + Math.random()*maxY);
-                this.visibleWords.push(new WordComponent(getNextWord(), x, y))
+                this.visibleWords.push(new WordComponent(this.getNextWord(), x, y))
             }
         },
         updateGame: function() {
+            myGameArea.clear();
+            this.frameNumber += 1;
+
             this.generateNewWordIfNeeded();
             for (let i = 0; i < this.visibleWords.length; i += 1) {
                 this.visibleWords[i].update();
                 this.visibleWords[i].draw();
             }
+
+            this.myScore.word = "SCORE: " + myGame.score;
+            this.myScore.draw();
+        },
+        getNextWord: function () {
+            return "Hello"
         }
 
     }
@@ -95,20 +103,8 @@
         }
     }
 
-
-    function getNextWord() {
-        return "Hello"
-    }
-    
     function updateGameArea() {
-        var x, height, gap, minHeight, maxHeight, minGap, maxGap;
-        myGameArea.clear();
-        myGameArea.frameNo += 1;
-
         myGame.updateGame();
-        
-        myScore.word = "SCORE: " + myGame.score;
-        myScore.draw();
     }
 
 
