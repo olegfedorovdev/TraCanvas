@@ -61,6 +61,7 @@
         debugText: new WordComponent("", 10, 60, 0),
 
         currentWord: "",
+        historyOfUsedWords: [],
         wordsType: words.types[0],
         getVisibleWordFromRect: function(rect) {
             for(let v = 0; v < this.visibleWords.length; ++v) {
@@ -129,10 +130,22 @@
             let idx = Math.floor(Math.random()*count);
             return words[this.wordsType][idx].fi;
         },
+        wasWordUsedRecently: function(word) {
+            return (this.historyOfUsedWords.indexOf(word) !== -1);
+        },
         generateNewCurrentWord: function () {
             let count = words[this.wordsType].length;
-            let idx = Math.floor(Math.random()*count);
+
+            var idx;
+            do {
+                idx = Math.floor(Math.random() * count);
+            } while(this.wasWordUsedRecently(words[this.wordsType][idx].en));
+
             this.currentWord = words[this.wordsType][idx].en;
+            this.historyOfUsedWords.push(this.currentWord);
+            if (this.historyOfUsedWords.length > 10) {
+                this.historyOfUsedWords = this.historyOfUsedWords.slice(1);//keep 10 max
+            }
 
             this.visibleWords = [];
             this.generateNewVisibleWord(words[this.wordsType][idx].fi);
@@ -142,6 +155,7 @@
         },
         changeWordsType: function(type) {
             this.wordsType = type;
+            this.generateNewCurrentWord();
         },
         getVisibleWordFromPos: function(pos) {
             let rect = {
@@ -267,5 +281,9 @@
 </script>
 <br>
 <button onclick='changeWordsType("all")'>ALL</button>
+<button onclick='changeWordsType("verbs")'>Verbs</button>
+<button onclick='changeWordsType("nouns")'>Nouns</button>
+<button onclick='changeWordsType("adjectives")'>Adjectives</button>
+<button onclick='changeWordsType("other")'>Other</button>
 </body>
 </html>
