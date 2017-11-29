@@ -36,33 +36,51 @@
         frameNumber: 0,
         visibleWords: [],
         score: 0,
-        myScore: new WordComponent("0", 10, 30),
-        generateNewWordIfNeeded: function() {
-            //generate new word every second
-            if ((this.frameNumber % 50) == 1) {
-                let minX = 20, maxX = (myGameArea.canvas.width - minX - 400);
-                let minY = 20, maxY = (myGameArea.canvas.height/2 - minY);
-                let x = Math.floor(minX + Math.random()*maxX);
-                let y = Math.floor(minY + Math.random()*maxY);
-                this.visibleWords.push(new WordComponent(this.getNextWord(), x, y))
-            }
+        myScore: new WordComponent("0", 300, 30),
+        wordToGuess: new WordComponent("0", 10, 30),
+        currentWord: "",
+
+        generateNewWord: function() {
+            let minX = 20, maxX = (myGameArea.canvas.width - minX - 400);
+            let minY = 40, maxY = (myGameArea.canvas.height/2 - minY);
+            let x = Math.floor(minX + Math.random()*maxX);
+            let y = Math.floor(minY + Math.random()*maxY);
+            this.visibleWords.push(new WordComponent(this.getNextVisibleWord(), x, y))
         },
         updateGame: function() {
             myGameArea.clear();
             this.frameNumber += 1;
+            if (this.frameNumber == 1) {
+                this.generateNewCurrentWord();
+            }
 
-            this.generateNewWordIfNeeded();
+            //generate new word every second
+            if ((this.frameNumber % 50) == 49) {
+                this.generateNewWord();
+            }
+
             for (let i = 0; i < this.visibleWords.length; i += 1) {
                 this.visibleWords[i].update();
                 this.visibleWords[i].draw();
             }
 
+            this.myScore.x = myGameArea.canvas.width/3*2;
             this.myScore.word = "SCORE: " + myGame.score;
             this.myScore.draw();
+
+            this.wordToGuess.word = "FIND: " + this.currentWord;
+            this.wordToGuess.draw();
         },
-        getNextWord: function () {
+        getNextVisibleWord: function () {
             return "Hello"
-        }
+        },
+        generateNewCurrentWord: function () {
+            this.currentWord = "Hello";
+            this.visibleWords = [];
+            for(let i = 0; i < 10; ++i) {
+                this.generateNewWord();
+            }
+        },
 
     }
     
@@ -72,32 +90,42 @@
         this.y = y;
         this.font = "30px Consolas";
         this.color = "black";
-        
+        this.alpha = 1
+
         this.speedX = 0;
         this.speedY = 0;
-        this.x = x;
-        this.y = y;
-        this.gravity = 0.02;
+        this.gravity = 0.01 + Math.random()*0.01;
         this.gravitySpeed = 0.0;
         this.height = 10;
         this.width = 100;
+        this.updatesCount = 0
 
         this.draw = function() {
             let ctx = myGameArea.context;
             ctx.font = this.font;
             ctx.color = this.color;
+            ctx.globalAlpha = this.alpha;
             ctx.fillText(this.word, this.x, this.y);
         }
         this.update = function() {
+            // appear slowly
+            this.updatesCount++;
+            if (this.updatesCount < 50) {
+                this.alpha = this.updatesCount / 50;
+                return;
+            } else {
+                this.alpha = 1;
+            }
+
             this.gravitySpeed += this.gravity;
             this.x += this.speedX;
             this.y += this.speedY + this.gravitySpeed;
             this.hitBottom();
         }
         this.hitBottom = function() {
-            let rockbottom = myGameArea.canvas.height - this.height;
-            if (this.y > rockbottom) {
-                this.y = rockbottom;
+            let bottom = myGameArea.canvas.height - this.height;
+            if (this.y > bottom) {
+                this.y = bottom;
                 this.gravitySpeed = 0;
             }
         }
